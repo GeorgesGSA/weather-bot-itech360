@@ -70,9 +70,9 @@ Você pode forçar o envio de um alerta no subworkflow 3 (Get_Weather_ALERT) par
 Basta abrir o workflow e localizar o nó chamado "Dados importantes".  
 Dentro do output desse nó, altere o campo `main` para um dos seguintes valores:
 
-- Thunderstorm  
-- Squall  
-- Tornado
+- `Thunderstorm`  
+- `Squall`  
+- `Tornado`
 
 Assim que esse dado for interpretado na lógica condicional, o alerta será ativado e enviado via WhatsApp como se houvesse um evento climático crítico na cidade monitorada.
 
