@@ -1,0 +1,193 @@
+{
+  "name": "[2 Sub_Workflow] - [Get_Weather]",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e3b723fb-e11f-4b2c-9121-cbd8beed4f78",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "329bafdd-e224-419c-bcfb-35afad7eb7fc",
+              "name": "cidade",
+              "value": "={{ $json.query }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ],
+      "id": "566c16bb-68f3-4296-9037-0f0f79c05515",
+      "name": "Cidade"
+    },
+    {
+      "parameters": {
+        "cityName": "={{ $json.cidade }}",
+        "language": "pt"
+      },
+      "type": "n8n-nodes-base.openWeatherMap",
+      "typeVersion": 1,
+      "position": [
+        440,
+        0
+      ],
+      "id": "ac54da5d-cec9-49af-9bc1-ace53bbe209e",
+      "name": "Busca dados de tempo",
+      "credentials": {
+        "openWeatherMapApi": {
+          "id": "teBNWUYWHLALrJbp",
+          "name": "OpenWeatherMap account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Coloque todos os dados abaixo em um unico campo e também inclua se há chances de chuvas.\n\ndescrição_tempo: {{ $json.weather[0].description }}\ntemperatura: {{ $json.main.temp }}\nsensação_termica: {{ $json.main.feels_like }}\ntemperatura_maxima: {{ $json.main.temp_max }}\ntemperatura_minima: {{ $json.main.temp_min }}\numidade: {{ $json.main.humidity }}\ncidade: {{ $json.name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        640,
+        0
+      ],
+      "id": "8f025512-1341-404b-80fa-40026d37b4ce",
+      "name": "Resumo do clima e tempo",
+      "credentials": {
+        "openAiApi": {
+          "id": "FwnFjJHQIPeJjkC0",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "074e325f-d61d-4e05-b191-b7ef20bffb5b",
+              "name": "content",
+              "value": "={{ $json.message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "670e4746-b69a-4a67-a5a1-92fea4766c21",
+              "name": "cidade",
+              "value": "={{ $('Cidade').item.json.cidade }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1000,
+        0
+      ],
+      "id": "f4e9ec30-a660-49e6-be32-7fe15b7625e4",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Cidade",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cidade": {
+      "main": [
+        [
+          {
+            "node": "Busca dados de tempo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca dados de tempo": {
+      "main": [
+        [
+          {
+            "node": "Resumo do clima e tempo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resumo do clima e tempo": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8e624b91-ad21-469d-afe7-f7fe2fb43302",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a979f96a743759b647b290befce47e05c1fc228ee2e6e94d5b94c0338293e689"
+  },
+  "id": "2cPORvvSYCr0Pspo",
+  "tags": [
+    {
+      "createdAt": "2025-07-09T03:24:22.453Z",
+      "updatedAt": "2025-07-09T03:24:22.453Z",
+      "id": "hCFqWeqrXkN7sOA3",
+      "name": "sub_workflow"
+    },
+    {
+      "createdAt": "2025-07-09T03:24:29.505Z",
+      "updatedAt": "2025-07-09T03:24:29.505Z",
+      "id": "2YhR87h57pzZiSki",
+      "name": "weather"
+    }
+  ]
+}
