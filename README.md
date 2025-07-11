@@ -76,6 +76,13 @@ Dentro do output desse nó, altere o campo `main` para um dos seguintes valores:
 
 Assim que esse dado for interpretado na lógica condicional, o alerta será ativado e enviado via WhatsApp como se houvesse um evento climático crítico na cidade monitorada.
 
+## Como o bot funciona
+O bot é acionado sempre que o usuário envia uma mensagem no WhatsApp.
+Ele realiza a consulta da previsão do tempo somente para o momento atual, ou seja:
+- Não responde perguntas sobre o clima de amanhã, ontem ou qualquer outra data.
+- Não exige comandos complexos, basta enviar apenas o nome da cidade desejada.
+- A resposta inclui temperatura, condições do céu, umidade e chance de chuva no exato momento da consulta.
+
 ## Possíveis melhorias para versão futura
 
 - Botões rápidos (Quick Reply) para facilitar o opt-in de alertas  
