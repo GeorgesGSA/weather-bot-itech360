@@ -43,7 +43,7 @@ A estrutura inclui:
 - Cidade consultada  
 - Campo booleano `active`, indicando se o usuário optou por receber alertas
 
-Quando o usuário responde "sim" à pergunta sobre receber notificações, o sistema atualiza o campo `active` para true. Esse campo é usado como filtro para o disparo dos alertas automáticos.
+Quando o usuário responde "sim" à pergunta sobre receber notificações, o sistema atualiza o campo `active` para `true`. Esse campo é usado como filtro para o disparo dos alertas automáticos.
 
 A memória da IA é armazenada usando o recurso Chat Postgres Memory, com janela limitada para manter a performance do banco.
 
