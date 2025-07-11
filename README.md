@@ -13,7 +13,7 @@ Permite que o usuário envie uma cidade via WhatsApp, receba a previsão do temp
 
 ## Componentes do sistema
 
-1 - `Agente_Clima_Tempo (workflow principal)`:
+1 - Agente_Clima_Tempo (workflow principal):
 É o ponto de entrada via Webhook Evolution. Recebe mensagens dos usuários e utiliza um agente inteligente que:
 - Detecta se o usuário quer uma previsão do tempo.
 - Aciona a ferramenta correspondente.
@@ -22,7 +22,7 @@ Permite que o usuário envie uma cidade via WhatsApp, receba a previsão do temp
 - Salva o número do usuário e a cidade em um banco de dados com a coluna "active" como false por padrão(isso será usado para as notificações).
 - Pergunta se o usuário deseja receber alertas no futuro.
 
-2 - `Subworkflow Get_Weather`:
+2 - Subworkflow Get_Weather:
 Responsável por:
 - Consultar a API OpenWeatherMap com base na cidade enviada.
 - Retornar dados atualizados sobre o clima.
