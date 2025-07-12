@@ -70,8 +70,7 @@ A memória do chat usa **Postgres Chat Memory** (janela curta).
 
 ## Como testar
 
-1. Envie o nome de uma cidade (texto ou áudio):  
-   `https://wa.me/11992111544?text=Oi!+Quero+saber+o+clima`  
+1. Envie o nome de uma cidade (texto ou áudio):  Teste aqui --> https://wa.me/11992111544?text=Oi!+Quero+saber+o+clima` 
 2. Receba a previsão atual. Use “amanhã”, “domingo”, etc. para pedir futuro.  
 3. Bot pergunta sobre alertas. Responda **SIM** ou **NÃO**.  
 4. Caso **SIM**, `active` vira `true` e alertas passam a ser monitorados.  
@@ -83,4 +82,29 @@ A memória do chat usa **Postgres Chat Memory** (janela curta).
 ## Teste manual de alerta
 
 No subworkflow **Get_Weather_ALERT**, abra o nó **Dados importantes** e mude `main` para:
+- `Thunderstorm`
+- `Squall`
+- `Tornado`
+Isso dispara o alerta como se existisse evento crítico.
 
+---
+
+## Como o bot funciona
+
+- Aceita **texto ou áudio** (áudio → transcrição).  
+- Suporta previsão atual **e** até **5 dias** à frente; basta incluir “amanhã”, “depois de amanhã”, dia da semana ou “daqui a X dias”.  
+- Não precisa de comandos complexos: apenas cidade [+ dia].  
+- Responde com temperatura, mín/máx (quando futuro), condição do céu, umidade e probabilidade de chuva.
+
+---
+
+## Ideias para próxima versão
+
+- Botões rápidos (Quick Reply) para opt-in/out.  
+- Envio diário da previsão pela manhã.  
+- Suporte multilíngue com detecção automática de idioma.
+
+---
+
+Feito com criatividade e propósito em n8n por **Georges S. Azzi** para a **ITECH360**.  
+Agradecimentos ao Gabriel pela oportunidade. Sugestões e PRs são bem-vindos!
