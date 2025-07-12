@@ -1,0 +1,424 @@
+{
+  "name": "[2 Sub_Workflow] - [Get_Weather]",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e3b723fb-e11f-4b2c-9121-cbd8beed4f78",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e2c59c8c-f938-4951-8057-b36a51202b01",
+              "name": "Cidade",
+              "value": "={{ $json.city }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        120
+      ],
+      "id": "566c16bb-68f3-4296-9037-0f0f79c05515",
+      "name": "Cidade"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Coloque todos os dados abaixo em um unico campo e também inclua se há chances de chuvas.\n\ndescrição_tempo: {{ $json.weather[0].description }}\ntemperatura: {{ $json.main.temp }}\nsensação_termica: {{ $json.main.feels_like }}\ntemperatura_maxima: {{ $json.main.temp_max }}\ntemperatura_minima: {{ $json.main.temp_min }}\numidade: {{ $json.main.humidity }}\ncidade: {{ $json.name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1180,
+        120
+      ],
+      "id": "8f025512-1341-404b-80fa-40026d37b4ce",
+      "name": "Resumo do clima e tempo",
+      "credentials": {
+        "openAiApi": {
+          "id": "FwnFjJHQIPeJjkC0",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "074e325f-d61d-4e05-b191-b7ef20bffb5b",
+              "name": "content",
+              "value": "={{ $json.message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "670e4746-b69a-4a67-a5a1-92fea4766c21",
+              "name": "cidade",
+              "value": "={{ $('Cidade').item.json.cidade }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1540,
+        120
+      ],
+      "id": "f4e9ec30-a660-49e6-be32-7fe15b7625e4",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Entrada: query = \"Curitiba domingo\", \"Curitiba hoje\", \"Curitiba segunda-feira\"\n * Saída : { city: \"Curitiba\", dayOffset: null|1|2|3|4 }\n */\n\nconst raw  = ($json.query || '').trim();     // texto original\nconst text = raw.toLowerCase();              // para detecção\n\n// ------------------------------\n// 1. identificar offset\n// ------------------------------\nconst weekdays = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'];\nconst specials = { 'hoje':0, 'amanhã':1, 'amanha':1, 'depois de amanhã':2, 'depois de amanha':2 };\n\nlet dayOffset = null;\nlet keyFound  = null;\n\n// especiais\nfor (const [k,v] of Object.entries(specials)) {\n  if (text.includes(k)) { dayOffset = v; keyFound = k; break; }\n}\n\n// dias da semana\nif (dayOffset === null) {\n  const today = new Date().getDay();   // 0=domingo\n  for (const [idx, wd] of weekdays.entries()) {\n    const r = new RegExp(`\\\\b${wd}(?:-feira)?\\\\b`, 'iu');\n    if (r.test(text)) {\n      let off = (idx - today + 7) % 7;\n      if (off === 0) off = 7;          // sempre próximo\n      dayOffset = off;\n      keyFound  = wd;\n      break;\n    }\n  }\n}\n\n// ------------------------------\n// 2. extrair cidade\n// - pega palavras até encontrar a 1ª que seja data\n// ------------------------------\nconst stop = /^(hoje|amanh[ãa]|depois|domingo|segunda(?:-feira)?|terça(?:-feira)?|terca(?:-feira)?|quarta(?:-feira)?|quinta(?:-feira)?|sexta(?:-feira)?|s[áa]bado)$/i;\n\nconst words = raw\n  .replace(/(?:\\\\n|\\\\r|\\n|\\r)/g, ' ')\n  .replace(/[.,;]+/g, ' ')\n  .trim()\n  .split(/\\s+/);\n\nconst cityWords = [];\nfor (const w of words) {\n  if (stop.test(w)) break;        // parou na primeira palavra-data\n  cityWords.push(w);\n}\n\nlet city = cityWords.join(' ').trim();\n// capitaliza\ncity = city.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');\n\n// ------------------------------\n// 3. saída\n// ------------------------------\nreturn [{ json: { city, dayOffset } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "17fa3dc6-7942-4be7-a205-9bb6e151274b",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * items[0].json.list  → 40 blocos (3 h) dos próximos 5 dias\n * Saída: { summary: \"Sex: …\\nSáb: …\\nDom: …\\nSeg: …\\nTer: …\" }\n */\nconst list = items[0].json.list;\n\n// Agrupa blocos por data YYYY-MM-DD\nconst groups = {};\nfor (const b of list) {\n  const date = b.dt_txt.substr(0, 10);\n  if (!groups[date]) groups[date] = { temps: [], pops: [], conds: {} };\n  groups[date].temps.push(b.main.temp);\n  groups[date].pops.push(b.pop);\n  const main = b.weather[0].main;          // Rain, Clouds, Clear…\n  groups[date].conds[main] = (groups[date].conds[main] || 0) + 1;\n}\n\n// Função helper para dia da semana em pt-BR\nfunction dayPt(dateStr) {\n  return new Date(dateStr).toLocaleDateString('pt-BR', { weekday: 'short' });\n}\n\n// Monta até 5 linhas\nconst lines = Object.entries(groups).slice(0, 5).map(([date, g]) => {\n  const avg = (g.temps.reduce((a, t) => a + t, 0) / g.temps.length).toFixed(1);\n  const min = Math.min(...g.temps).toFixed(0);\n  const max = Math.max(...g.temps).toFixed(0);\n  const pop = Math.round(Math.max(...g.pops) * 100);\n  const cond = Object.entries(g.conds).sort((a, b) => a[1] - b[1]).pop()[0];\n\n  const emoji =\n    /rain|storm/i.test(cond) ? '☔' :\n    /cloud/i.test(cond)     ? '⛅' :\n    /snow/i.test(cond)      ? '❄️' :\n                              '☀️';\n\n  return `${dayPt(date)}: ${avg} °C (${min}-${max}) · ${cond} ${pop ? `💧${pop}%` : ''} ${emoji}`;\n});\n\nreturn [{ json: { summary: lines.join('\\n') } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        -100
+      ],
+      "id": "7669a24d-bc52-4390-b3d8-dbb41482c92f",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e356eb45-5462-496f-91b7-30c4e293e8a7",
+              "name": "message.content",
+              "value": "={{ $json.message.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1900,
+        -100
+      ],
+      "id": "d9c690fa-9802-4b39-bd3c-048554fc9c7d",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4c39f590-2923-4297-846a-fa58e74bcc00",
+              "leftValue": "={{ $json.dayOffset }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        0
+      ],
+      "id": "38c41db6-bc43-4d01-8a6d-6e838f3afd21",
+      "name": "Atual ou 5 dias"
+    },
+    {
+      "parameters": {
+        "cityName": "={{ $json.Cidade }}",
+        "language": "pt"
+      },
+      "type": "n8n-nodes-base.openWeatherMap",
+      "typeVersion": 1,
+      "position": [
+        980,
+        120
+      ],
+      "id": "ac54da5d-cec9-49af-9bc1-ace53bbe209e",
+      "name": "Busca dados de tempo atual",
+      "credentials": {
+        "openWeatherMapApi": {
+          "id": "teBNWUYWHLALrJbp",
+          "name": "OpenWeatherMap account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "5DayForecast",
+        "cityName": "={{ $json.Cidade }}",
+        "language": "pt"
+      },
+      "type": "n8n-nodes-base.openWeatherMap",
+      "typeVersion": 1,
+      "position": [
+        980,
+        -100
+      ],
+      "id": "64d34d49-2499-4fa6-9548-4742ee98d4b5",
+      "name": "Busca dados de tempo 5 dias",
+      "credentials": {
+        "openWeatherMapApi": {
+          "id": "teBNWUYWHLALrJbp",
+          "name": "OpenWeatherMap account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Faça um resumo em português-br sobre a descrição do tempo para os proximos 5 diase diga que é uma média: \n\nCidade: {{ $('Cidade1').item.json.Cidade }}\nResumo 5 dias {{ $json.summary }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1540,
+        -100
+      ],
+      "id": "87afe07c-d87f-4030-962a-8626e4d6f9c5",
+      "name": "Resumo do clima de 5 dias",
+      "credentials": {
+        "openAiApi": {
+          "id": "FwnFjJHQIPeJjkC0",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e2c59c8c-f938-4951-8057-b36a51202b01",
+              "name": "Cidade",
+              "value": "={{ $json.city }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        -100
+      ],
+      "id": "e0c87423-eb04-4351-b886-38b1558172cb",
+      "name": "Cidade1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cidade": {
+      "main": [
+        [
+          {
+            "node": "Busca dados de tempo atual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resumo do clima e tempo": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Atual ou 5 dias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Resumo do clima de 5 dias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atual ou 5 dias": {
+      "main": [
+        [
+          {
+            "node": "Cidade1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cidade",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca dados de tempo atual": {
+      "main": [
+        [
+          {
+            "node": "Resumo do clima e tempo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca dados de tempo 5 dias": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resumo do clima de 5 dias": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cidade1": {
+      "main": [
+        [
+          {
+            "node": "Busca dados de tempo 5 dias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "261c9169-51b0-4514-9c33-e969aa2f3f48",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a979f96a743759b647b290befce47e05c1fc228ee2e6e94d5b94c0338293e689"
+  },
+  "id": "2cPORvvSYCr0Pspo",
+  "tags": [
+    {
+      "createdAt": "2025-07-09T03:24:22.453Z",
+      "updatedAt": "2025-07-09T03:24:22.453Z",
+      "id": "hCFqWeqrXkN7sOA3",
+      "name": "sub_workflow"
+    },
+    {
+      "createdAt": "2025-07-09T03:24:29.505Z",
+      "updatedAt": "2025-07-09T03:24:29.505Z",
+      "id": "2YhR87h57pzZiSki",
+      "name": "weather"
+    }
+  ]
+}
